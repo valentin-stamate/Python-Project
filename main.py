@@ -14,6 +14,7 @@ def main():
 
     game = Game(window, canvas, config)
 
+    window.eval('tk::PlaceWindow . center')
     window.mainloop()
 
 

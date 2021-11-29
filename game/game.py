@@ -1,4 +1,5 @@
 import random
+import threading
 import time
 from threading import Thread
 from tkinter import Canvas, Tk, Button, Label
@@ -45,10 +46,15 @@ class Game:
 
         self.walls = config['blocks']
 
+        # Starting message
+        self.canvas_text = self.canvas.create_text(self.width / 2, self.height / 2,
+                                                   fill="white", font="Calibri 20 bold", text="Press Start!")
+
         # Initialization
         self.snake = [[2, 3], [2, 2], [2, 1]]
         self.food = []
         self.dir = [1, 0]
+        self.board_box = self.create_board(self.rows, self.columns)
 
         self.grid = config['grid']
 
@@ -62,26 +68,41 @@ class Game:
         self.window.bind('<Down>', lambda e: self.down())
 
         # Snackbar
-        self.score_label = Label(self.window, text=f'Score: %-3d' % self.score)
-        self.score_label.grid(row=1, column=1)
         self.best_score_label = Label(self.window, text=f'Best Score: %-3d' % self.best_score)
-        self.best_score_label.grid(row=1, column=2)
+        self.best_score_label.grid(row=1, column=1)
 
         self.canvas.create_rectangle(0, 0, self.width, self.snackbar_width,
                                      fill=self.colors[CellType.EMPTY], outline='')
 
         Button(self.window, text='Start!', bd='5', command=lambda: self.start()).grid(row=1, column=0)
+        Button(self.window, text='Exit!', bd='5', command=lambda: self.on_exit()).grid(row=1, column=2)
+
+    def on_exit(self):
+        if self.game_running:
+            return
+        self.canvas.delete(self.canvas_text)
+
+        self.canvas_text = self.canvas.create_text(self.width / 2, self.height / 2, fill="white",
+                                                   font="Calibri 20 bold", text=f'Best Score: %-3d' % self.best_score)
+
+        thread = Thread(target=lambda: self.exit())
+        thread.start()
+
+    def exit(self):
+        time.sleep(2)
+        self.window.destroy()
 
     def start(self):
         if self.game_running:
             return
 
+        self.canvas.delete(self.canvas_text)
+
         self.game_running = True
         self.game_won = False
         self.game_end = False
 
-        self.board = Game.create_matrix(self.rows, self.columns)
-        self.board_box = self.create_board(self.rows, self.columns)
+        self.reset_matrix(self.board, CellType.EMPTY)
 
         # Initialising blocks
         for block in self.walls:
@@ -111,10 +132,21 @@ class Game:
             self.frame_count += 1
             time.sleep(1 / self.refresh_rate)
 
+        self.canvas_text = self.canvas.create_text(self.width / 2, self.height / 2, fill="white",
+                                                   font="Calibri 20 bold", text=f'Your Score: %-3d' % self.score)
         self.game_running = False
+
+        self.reset_matrix(self.board, CellType.EMPTY)
+        self.draw_board()
 
     def draw(self):
 
+        self.draw_board()
+
+        self.refresh_snake()
+        self.move = False
+
+    def draw_board(self):
         for i in range(self.rows):
             for j in range(self.columns):
                 new_color = self.colors[self.board[i][j]]
@@ -122,9 +154,6 @@ class Game:
 
                 if new_color != old_color:
                     self.canvas.itemconfig(self.board_box[i][j], fill=new_color)
-
-        self.refresh_snake()
-        self.move = False
 
     def refresh_snake(self):
         old_tail = self.snake[len(self.snake) - 1]
@@ -153,7 +182,6 @@ class Game:
 
         if Game.equal_blocks(head, self.food):
             self.score += 1
-            self.update_score()
             self.snake.append(old_tail)
             self.put_on_board(old_tail, CellType.SNAKE)
 
@@ -179,9 +207,6 @@ class Game:
         i = block[0]
         j = block[1]
         return i == -1 or i == self.rows or j == -1 or j == self.columns
-
-    def update_score(self):
-        self.score_label.config(text=f'Score: %-3d' % self.score)
 
     def update_max_score(self):
         self.best_score = max(self.best_score, self.score)
@@ -253,6 +278,12 @@ class Game:
         self.food = random_block
 
         self.put_on_board(self.food, CellType.FOOD)
+
+    @staticmethod
+    def reset_matrix(matrix, value=0):
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
+                matrix[i][j] = value
 
     @staticmethod
     def create_matrix(rows, columns, default_value=0):
