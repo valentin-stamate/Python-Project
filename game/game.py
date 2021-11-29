@@ -30,23 +30,36 @@ class Game:
     score = 0
     best_score = 0
 
-    def __init__(self, window: Tk, canvas: Canvas, rows, columns):
+    def __init__(self, window: Tk, canvas: Canvas, config):
         self.canvas = canvas
         self.window = window
-        self.rows = rows
-        self.columns = columns
+        self.rows = config['rows']
+        self.columns = config['columns']
         self.width = int(canvas['width']) - self.offset_x
         self.height = int(canvas['height']) - self.offset_y
-        self.box_width = self.width / columns
-        self.box_height = self.height / rows
+        self.box_width = self.width / self.columns
+        self.box_height = self.height / self.rows
 
-        self.board = Game.create_matrix(rows, columns)
-        self.board_box = self.create_board(rows, columns)
+        self.board = Game.create_matrix(self.rows, self.columns)
+        self.board_box = self.create_board(self.rows, self.columns)
 
+        self.walls = config['blocks']
+
+        # Initialization
         self.snake = [[2, 3], [2, 2], [2, 1]]
         self.food = []
         self.dir = [1, 0]
-        self.put_grid(self.canvas, self.rows, self.columns)
+
+        self.grid = config['grid']
+
+        if self.grid:
+            self.put_grid(self.canvas, self.rows, self.columns)
+
+        # Controls
+        self.window.bind('<Left>', lambda e: self.left())
+        self.window.bind('<Right>', lambda e: self.right())
+        self.window.bind('<Up>', lambda e: self.up())
+        self.window.bind('<Down>', lambda e: self.down())
 
         # Snackbar
         self.score_label = Label(self.window, text=f'Score: %-3d' % self.score)
@@ -70,6 +83,10 @@ class Game:
         self.board = Game.create_matrix(self.rows, self.columns)
         self.board_box = self.create_board(self.rows, self.columns)
 
+        # Initialising blocks
+        for block in self.walls:
+            self.put_on_board(block, CellType.WALL)
+
         self.snake = [[2, 3], [2, 2], [2, 1]]
         self.food = []
 
@@ -77,7 +94,9 @@ class Game:
         self.dir = [1, 0]
 
         self.spawn_food()
-        self.put_grid(self.canvas, self.rows, self.columns)
+
+        if self.grid:
+            self.put_grid(self.canvas, self.rows, self.columns)
 
         thread = Thread(target=self.pre_draw)
         thread.start()
@@ -112,8 +131,8 @@ class Game:
 
         new_block = [self.snake[0][0] + self.dir[1], self.snake[0][1] + self.dir[0]]
 
-        # Check wall collision
-        if self.block_outside(new_block):
+        # Check outside
+        if self.block_outside(new_block) or self.wall_collision(new_block):
             self.game_end = True
             return
 
@@ -140,9 +159,16 @@ class Game:
 
             self.spawn_food()
 
+    def wall_collision(self, head_block):
+        i = head_block[0]
+        j = head_block[1]
+
+        return self.board[i][j] == CellType.WALL
+
     def snake_collision(self):
         head = self.snake[0]
 
+        # Tail collision
         for i in range(1, len(self.snake)):
             if self.equal_blocks(head, self.snake[i]):
                 return True

@@ -1,20 +1,18 @@
 import tkinter as tk
-from game import Game
+from game.game import Game
+from game.json_reader import JsonReader
 
 
 def main():
+    config = JsonReader.read('configuration.json')
+
     window = tk.Tk()
     window.title('Snake')
 
-    canvas = tk.Canvas(window, bg="#202020", height=460, width=690)
-    canvas.grid(row=0, column=0, columnspan=4)
+    canvas = tk.Canvas(window, bg="#202020", width=config['width'], height=config['height'])
+    canvas.grid(row=0, column=0, columnspan=3)
 
-    game = Game(window, canvas, 20, 30)
-
-    window.bind('<Left>', lambda e: game.left())
-    window.bind('<Right>', lambda e: game.right())
-    window.bind('<Up>', lambda e: game.up())
-    window.bind('<Down>', lambda e: game.down())
+    game = Game(window, canvas, config)
 
     window.mainloop()
 

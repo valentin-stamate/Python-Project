@@ -13,3 +13,5 @@
 * Tkinter Grid : https://stackoverflow.com/a/23584607/10805602
 * Tkinter Grid : https://www.tutorialspoint.com/python/tk_grid.htm
 * Change Label Text : https://www.geeksforgeeks.org/how-to-change-the-tkinter-label-text
+* Parse JSON : https://www.geeksforgeeks.org/read-json-file-using-python/
+* Creating Executable : https://stackoverflow.com/questions/48299396/converting-tkinter-to-exe
