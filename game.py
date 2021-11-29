@@ -13,7 +13,7 @@ class CellType:
 
 
 class Game:
-    refresh_rate = 7
+    refresh_rate = 20
     frame_count = 0
     colors = {CellType.EMPTY: '#202020', CellType.SNAKE: '#ffffff', CellType.WALL: '#3862ab',
               CellType.FOOD: '#f54545', CellType.BONUS: '#9e36d6'}
@@ -36,13 +36,13 @@ class Game:
 
         self.snake = [[2, 3]]
         self.food = []
-        self.spawn_food()
 
         self.put_on_board(self.snake[0], CellType.SNAKE)
 
         self.dir = [1, 0]
 
-        Game.put_grid(self.canvas, rows, columns)
+        self.spawn_food()
+        # Game.put_grid(self.canvas, rows, columns)
 
     def start(self):
         thread = Thread(target=self.pre_draw)
@@ -56,19 +56,19 @@ class Game:
             self.draw()
             self.frame_count += 1
             time.sleep(1 / self.refresh_rate)
+            print(self.frame_count)
 
     def draw(self):
 
         for i in range(self.rows):
             for j in range(self.columns):
-                self.canvas.itemconfig(self.board_box[i][j], fill=self.colors[self.board[i][j]])
+                new_color = self.colors[self.board[i][j]]
+                old_color = self.canvas.itemcget(self.board_box[i][j], 'fill')
 
-        try:
-            self.refresh_snake()
-        except:
-            self.game_end = True
-            print("Game Ended")
+                if new_color != old_color:
+                    self.canvas.itemconfig(self.board_box[i][j], fill=new_color)
 
+        self.refresh_snake()
         self.move = False
 
     def refresh_snake(self):
@@ -76,12 +76,22 @@ class Game:
 
         new_block = [self.snake[0][0] + self.dir[1], self.snake[0][1] + self.dir[0]]
 
+        # Check wall collision
+        if self.block_outside(new_block):
+            self.game_end = True
+            return
+
         self.snake.remove(old_tail)
 
         self.snake.insert(0, new_block)
 
         self.put_on_board(old_tail, CellType.EMPTY)
         self.put_on_board(new_block, CellType.SNAKE)
+
+        # Check collision
+        if self.snake_collision():
+            self.game_end = True
+            return
 
         # Check for food
         head = self.snake[0]
@@ -94,6 +104,19 @@ class Game:
 
             self.spawn_food()
 
+    def snake_collision(self):
+        head = self.snake[0]
+
+        for i in range(1, len(self.snake)):
+            if self.equal_blocks(head, self.snake[i]):
+                return True
+
+        return False
+
+    def block_outside(self, block):
+        i = block[0]
+        j = block[1]
+        return i == -1 or i == self.rows or j == -1 or j == self.columns
 
     @staticmethod
     def equal_blocks(block_a, block_b):
@@ -135,7 +158,8 @@ class Game:
             board.append([])
             for j in range(columns):
                 board[i].append(self.canvas.create_rectangle(self.rectangle_coords([i, j]),
-                                                             fill=self.colors[CellType.EMPTY], outline=''))
+                                                             fill=self.colors[CellType.EMPTY],
+                                                             outline=self.colors[CellType.EMPTY], width=3))
 
         return board
 
