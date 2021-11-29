@@ -18,6 +18,7 @@ class Game:
     offset_x = 0
     offset_y = snackbar_width
 
+    weight = 3
     refresh_rate = 20
     frame_count = 0
     colors = {CellType.EMPTY: '#202020', CellType.SNAKE: '#ffffff', CellType.WALL: '#3862ab',
@@ -51,9 +52,9 @@ class Game:
                                                    fill="white", font="Calibri 20 bold", text="Press Start!")
 
         # Initialization
-        self.snake = [[2, 3], [2, 2], [2, 1]]
+        self.snake = []
         self.food = []
-        self.dir = [1, 0]
+        self.dir = []
         self.board_box = self.create_board(self.rows, self.columns)
 
         self.grid = config['grid']
@@ -108,7 +109,7 @@ class Game:
         for block in self.walls:
             self.put_on_board(block, CellType.WALL)
 
-        self.snake = [[2, 3], [2, 2], [2, 1]]
+        self.snake = [[2, 6], [2, 5], [2, 4]]
         self.food = []
 
         self.put_on_board(self.snake[0], CellType.SNAKE)
@@ -257,7 +258,7 @@ class Game:
             for j in range(columns):
                 board[i].append(self.canvas.create_rectangle(self.rectangle_coords([i, j]),
                                                              fill=self.colors[CellType.EMPTY],
-                                                             outline=self.colors[CellType.EMPTY], width=3))
+                                                             outline=self.colors[CellType.EMPTY], width=self.weight))
 
         return board
 
