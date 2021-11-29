@@ -13,8 +13,6 @@ def main():
     game = Game(canvas, 10, 10)
     game.start()
 
-    # rec = canvas.create_rectangle(120, 120, 180, 180, fill="#ffffff", outline='')
-
     # canvas.move(rec, -100, 0)
     # canvas.delete(rec)
 
