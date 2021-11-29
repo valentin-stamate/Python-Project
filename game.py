@@ -1,7 +1,7 @@
 import random
 import time
 from threading import Thread
-from tkinter import Canvas
+from tkinter import Canvas, Tk, Button, Label
 
 
 class CellType:
@@ -13,6 +13,10 @@ class CellType:
 
 
 class Game:
+    snackbar_width = 0
+    offset_x = 0
+    offset_y = snackbar_width
+
     refresh_rate = 20
     frame_count = 0
     colors = {CellType.EMPTY: '#202020', CellType.SNAKE: '#ffffff', CellType.WALL: '#3862ab',
@@ -21,42 +25,74 @@ class Game:
     move = False
     game_won = False
     game_end = False
-    score = 0
+    game_running = False
 
-    def __init__(self, canvas: Canvas, rows, columns):
+    score = 0
+    best_score = 0
+
+    def __init__(self, window: Tk, canvas: Canvas, rows, columns):
         self.canvas = canvas
+        self.window = window
         self.rows = rows
         self.columns = columns
-        self.box_width = int(canvas['width']) / columns
-        self.box_height = int(canvas['height']) / rows
+        self.width = int(canvas['width']) - self.offset_x
+        self.height = int(canvas['height']) - self.offset_y
+        self.box_width = self.width / columns
+        self.box_height = self.height / rows
 
         self.board = Game.create_matrix(rows, columns)
-
         self.board_box = self.create_board(rows, columns)
 
-        self.snake = [[2, 3]]
+        self.snake = [[2, 3], [2, 2], [2, 1]]
+        self.food = []
+        self.dir = [1, 0]
+        self.put_grid(self.canvas, self.rows, self.columns)
+
+        # Snackbar
+        self.score_label = Label(self.window, text=f'Score: %-3d' % self.score)
+        self.score_label.grid(row=1, column=1)
+        self.best_score_label = Label(self.window, text=f'Best Score: %-3d' % self.best_score)
+        self.best_score_label.grid(row=1, column=2)
+
+        self.canvas.create_rectangle(0, 0, self.width, self.snackbar_width,
+                                     fill=self.colors[CellType.EMPTY], outline='')
+
+        Button(self.window, text='Start!', bd='5', command=lambda: self.start()).grid(row=1, column=0)
+
+    def start(self):
+        if self.game_running:
+            return
+
+        self.game_running = True
+        self.game_won = False
+        self.game_end = False
+
+        self.board = Game.create_matrix(self.rows, self.columns)
+        self.board_box = self.create_board(self.rows, self.columns)
+
+        self.snake = [[2, 3], [2, 2], [2, 1]]
         self.food = []
 
         self.put_on_board(self.snake[0], CellType.SNAKE)
-
         self.dir = [1, 0]
 
         self.spawn_food()
-        # Game.put_grid(self.canvas, rows, columns)
+        self.put_grid(self.canvas, self.rows, self.columns)
 
-    def start(self):
         thread = Thread(target=self.pre_draw)
         thread.start()
 
     def pre_draw(self):
         while True:
             if self.game_end or self.game_won:
-                return
+                self.update_max_score()
+                break
 
             self.draw()
             self.frame_count += 1
             time.sleep(1 / self.refresh_rate)
-            print(self.frame_count)
+
+        self.game_running = False
 
     def draw(self):
 
@@ -98,7 +134,7 @@ class Game:
 
         if Game.equal_blocks(head, self.food):
             self.score += 1
-
+            self.update_score()
             self.snake.append(old_tail)
             self.put_on_board(old_tail, CellType.SNAKE)
 
@@ -118,6 +154,13 @@ class Game:
         j = block[1]
         return i == -1 or i == self.rows or j == -1 or j == self.columns
 
+    def update_score(self):
+        self.score_label.config(text=f'Score: %-3d' % self.score)
+
+    def update_max_score(self):
+        self.best_score = max(self.best_score, self.score)
+        self.best_score_label.config(text=f'Best Score: %-3d' % self.best_score)
+
     @staticmethod
     def equal_blocks(block_a, block_b):
         return block_a[0] == block_b[0] and block_a[1] == block_b[1]
@@ -128,28 +171,32 @@ class Game:
 
         self.board[i][j] = cell_type
 
-    @staticmethod
-    def put_grid(canvas: Canvas, rows, columns):
-        color = '#ffffff'
+    def put_grid(self, canvas: Canvas, rows, columns):
+        color = '#151515'
         wid = 1
 
-        width = canvas['width']
-        height = canvas['height']
+        box_width = self.width / columns
+        box_height = self.height / rows
 
-        box_width = int(width) / columns
-        box_height = int(height) / rows
+        off_x = self.offset_x
+        off_y = self.offset_y
 
         for i in range(rows + 1):
-            canvas.create_line(0, box_height * i, width, box_height * i, fill=color, width=wid)
+            canvas.create_line(off_x + 0, off_y + box_height * i, off_x + self.width, off_y + box_height * i,
+                               fill=color, width=wid)
 
         for j in range(columns + 1):
-            canvas.create_line(box_width * j, 0, box_width * j, height, fill=color, width=wid)
+            canvas.create_line(off_x + box_width * j, off_y + 0, off_x + box_width * j, off_y + self.height,
+                               fill=color, width=wid)
 
     def rectangle_coords(self, block):
         i = block[0]
         j = block[1]
 
-        return j * self.box_width, i * self.box_height, (j + 1) * self.box_width, (i + 1) * self.box_height
+        off_x = self.offset_x
+        off_y = self.offset_y
+
+        return off_x + j * self.box_width, off_y + i * self.box_height, off_x + (j + 1) * self.box_width, off_y + (i + 1) * self.box_height
 
     def create_board(self, rows, columns):
         board = []
@@ -173,6 +220,7 @@ class Game:
 
         if len(available_blocks) == 0:
             self.game_won = True
+            self.game_end = True
             return
 
         random_block = random.choice(available_blocks)
