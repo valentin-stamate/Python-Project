@@ -13,6 +13,12 @@ def main():
     game = Game(canvas, 10, 10)
     game.start()
 
+    window.bind('<Left>', lambda e: game.left())
+    window.bind('<Right>', lambda e: game.right())
+    window.bind('<Up>', lambda e: game.up())
+    window.bind('<Down>', lambda e: game.down())
+
+
     # canvas.move(rec, -100, 0)
     # canvas.delete(rec)
 
