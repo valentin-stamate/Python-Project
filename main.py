@@ -1,5 +1,5 @@
 import tkinter as tk
-from game.game import Game
+from game.snakegame import SnakeGame
 from game.json_reader import JsonReader
 
 
@@ -12,7 +12,7 @@ def main():
     canvas = tk.Canvas(window, bg="#202020", width=config['width'], height=config['height'])
     canvas.grid(row=0, column=0, columnspan=3)
 
-    game = Game(window, canvas, config)
+    SnakeGame(window, canvas, config)
 
     window.eval('tk::PlaceWindow . center')
     window.mainloop()
