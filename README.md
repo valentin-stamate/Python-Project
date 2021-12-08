@@ -1,5 +1,9 @@
 # Snake
 
+## Task 
+
+![Task](https://raw.githubusercontent.com/StamateValentin/Python-Project/main/task.jpg?token=AKL4B2O6NIJWZ2DW26OWTEDBXGFO6)
+
 ## Resources
 * Some Documentation : https://realpython.com/python-gui-tkinter
 * Canvas : https://python-course.eu/tkinter_canvas.php
